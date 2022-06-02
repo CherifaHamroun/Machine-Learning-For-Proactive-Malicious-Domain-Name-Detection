@@ -39,10 +39,10 @@ def shannon_entropy(string):
 
 if __name__=='__main__':
 	
-	df = pd.read_csv('data_textual_attributes.csv')
+	df = pd.read_csv('../../code_data/all_domains_with_textual_attributes.csv')
 	cluster = dask.distributed.LocalCluster()
 	client = dask.distributed.Client(cluster)
-	loaded_model = pickle.load(open("xgbdask_alexa_data.pickle.dat", "rb"))
+	loaded_model = pickle.load(open("./models_overall/xgbdask_spams_dgas_phishing_gandi_selled.pkl", "rb"))
 	domain = input("Domain name : ")
 	ws.load()
 	txt = tldextract.extract(domain).suffix

@@ -8,15 +8,16 @@ import  sklearn.metrics as skm
 import joblib
 import sklearn 
 import matplotlib.pyplot as plt
+import os
 
-def plot_roc_curve(fper, tper):  
+def plot_roc_curve(directory,filename,fper, tper):  
     plt.plot(fper, tper, color='orange', label='ROC')
     plt.plot([0, 1], [0, 1], color='darkblue', linestyle='--')
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
     plt.title('Receiver Operating Characteristic (ROC) Curve')
     plt.legend()
-    plt.savefig("ROC_curve_alexa_data.png") #save as png
+    plt.savefig("./performances_"+directory+"/ROC_"+filename+".png") #save as png
 
 
 class ELM(object):  
@@ -93,7 +94,7 @@ class ELM(object):
         # Sigmoid activation function
         self.H = self.sigmoid(self.H)
 
-        # Calculate the Moore-Penrose pseudoinverse matriks        
+        # Calculate the Moore-Penrose pseudoinverse matrix       
         H_moore_penrose = np.linalg.inv(self.H.T * self.H) * self.H.T
 
         # Calculate the output weight matrix beta
@@ -101,41 +102,43 @@ class ELM(object):
 
         return self.H * self.beta
 if __name__=='__main__':
-        print('--- Loading your data ...')
-        start_time = time.time()
-        dff = ddf.read_csv("../../code_data/preprocessed_data.csv")
-        dff = dff.sample(frac=1)
-        df = dff.drop(['class'], axis=1)
-        print(len(dff))
-        X = df.iloc[:, 2:17].values
-        Y = dff.iloc[:, 17].values
-        print("--- Data loaded in  %s seconds ---" % (time.time() - start_time))
-        print('--- Chunksizes computing ...')
-        start_time = time.time()
-        X.compute_chunk_sizes()
-        Y.compute_chunk_sizes()
-        print("--- Chunksizes computed in  %s seconds ---" % (time.time() - start_time))
-        print('--- Dataset splitting ...')
-        start_time = time.time()
-        x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=0.3)
-        print("--- Dataset splitted in  %s seconds ---" % (time.time() - start_time))
-        elm = ELM(X.shape[1], 1, 100)
-        print('--- Training ...')
-        start_time = time.time()
-        # Train data
-        elm.train(x_train.compute(),y_train.compute().reshape(-1,1))
-        print("--- Training done in  %s seconds ---" % (time.time() - start_time))
-        joblib.dump(elm, 'elm_alexa_data.pkl')
-        # Make prediction from training process
-        elm_from_joblib = joblib.load('elm_alexa_data.pkl')
-        y_pred = np.round(elm.predict(x_test.compute()))
-        y_test = y_test.compute()
-        print('--- Accuracy : ',skm.accuracy_score(y_test, y_pred))
-        print('--- F1 score : ',skm.f1_score(y_test, y_pred, average='macro'))
-        print('--- Precision : ',skm.precision_score(y_test, y_pred, average='macro'))
-        print('--- Recall : ',skm.recall_score(y_test, y_pred, average='macro'))
-        print('--- ROC AUC score : ',skm.roc_auc_score(y_test, y_pred))
-        fper, tper, thresholds = skm.roc_curve(y_test, y_pred) 
-        plot_roc_curve(fper, tper)
-        print('--- Confusion Matrix : ',skm.confusion_matrix(y_test, y_pred, labels=[0,1]))
-
+	directories = ['preprocessed_instances_for_overall_test', 'preprocessed_instances_for_alikeness_test']
+	for directory in directories:
+		for filename in os.listdir('../../code_data/'+directory):
+			f = os.path.join('../../code_data/'+directory, filename)
+			if os.path.isfile(f):
+				print('--- Loading '+filename+' data ...')
+				start_time = time.time()
+				dff = ddf.read_csv(f)
+				dff = dff.sample(frac=1)
+				df = dff.drop(['class'], axis=1)
+				X = df.iloc[:, 3:18].values
+				Y = dff.iloc[:, 18].values
+				print("--- Data loaded in  %s seconds ---" % (time.time() - start_time))
+				print('--- Chunksizes computing ...')
+				start_time = time.time()
+				X.compute_chunk_sizes()
+				Y.compute_chunk_sizes()
+				print("--- Chunksizes computed in  %s seconds ---" % (time.time() - start_time))
+				print('--- Dataset splitting ...')
+				start_time = time.time()
+				x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=0.3)
+				print("--- Dataset splitted in  %s seconds ---" % (time.time() - start_time))
+				elm = ELM(X.shape[1], 1, 100)
+				print('--- Training ...')
+				start_time = time.time()
+			# Train data
+				elm.train(x_train.compute(),y_train.compute().reshape(-1,1))
+				print("--- Training done in  %s seconds ---" % (time.time() - start_time))
+				joblib.dump(elm, './models_'+directory[27:-5]+'/elm_'+filename[22:-4]+'.pkl')
+				y_pred = np.round(elm.predict(x_test.compute()))
+				y_test = y_test.compute()
+				with open("./performances_"+directory[27:-5]+"/performance_"+filename[22:-4]+".txt", "w") as file1:
+					file1.write('--- Accuracy : '+str(skm.accuracy_score(y_test, y_pred))+'\n')
+					file1.write('--- F1 score : '+str(skm.f1_score(y_test, y_pred, average='macro'))+'\n')
+					file1.write('--- Precision : '+str(skm.precision_score(y_test, y_pred, average='macro'))+'\n')
+					file1.write('--- Recall : '+str(skm.recall_score(y_test, y_pred, average='macro'))+'\n')
+					file1.write('--- ROC AUC score : '+str(skm.roc_auc_score(y_test, y_pred))+'\n')
+					fper, tper, thresholds = skm.roc_curve(y_test, y_pred) 
+					plot_roc_curve(directory[27:-5],filename[22:-4],fper, tper)
+					file1.write('--- Confusion Matrix : '+str(skm.confusion_matrix(y_test, y_pred, labels=[0,1]))+'\n')

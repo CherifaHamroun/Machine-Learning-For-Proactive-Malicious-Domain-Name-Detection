@@ -40,8 +40,8 @@ def shannon_entropy(string):
 
 if __name__=='__main__':
 	
-	df = pd.read_csv('data_textual_attributes.csv')
-	elm_from_joblib = joblib.load('elm_alexa_data.pkl')
+	df = pd.read_csv('../../code_data/all_domains_with_textual_attributes.csv')
+	elm_from_joblib = joblib.load('./models_overall/elm_spams_dgas_phishing_gandi_selled.pkl')
 	domain = input("Domain name : ")
 	ws.load()
 	txt = tldextract.extract(domain).suffix
@@ -84,5 +84,4 @@ if __name__=='__main__':
 		nb_legitimate_keywords += domain.count(word)
 	attributes = da.reshape(da.from_array([len(domain),tlds[tlds.shape[0]-1],shannon_entropy(domain),nb_suspect_keywords,count,len(list_chars)- list_chars.count(''), len(ws.segment(domain)),sum(c.isdigit() for c in domain),int(r),len(set(domain)), nb_legitimate_keywords, domain.count('-'), domain.find('-')/len(domain) ,freq_transition_d_c ,ratio]),(1,15))
 	prediction = elm_from_joblib.predict(attributes)
-	print(bool(np.round(prediction)))
-	
+	print(np.round(prediction))
