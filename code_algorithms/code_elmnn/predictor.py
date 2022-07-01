@@ -13,6 +13,10 @@ import pandas as pd
 import numpy as np 
 import dask.array as da
 from elm_pure import ELM
+import sys
+sys.path.append('../../')
+from code_data.code_preprocessors.trending_keywords_extractor import trends_extract
+import os
 
 suspect_keywords_list = ['activity', 'appleid', 'poloniex', 'moneygram', 'overstock', '.bank', '.online', '.comalert', 'online',
  'coinhive', '.business', '.party', '-com.', 'purchase', 'recover', 'iforgot', 'bithumb', 'reddit', '.cc', '.pw', '.netauthentication', 'safe',
@@ -40,10 +44,20 @@ def shannon_entropy(string):
 
 if __name__=='__main__':
 	
-	df = pd.read_csv('../../code_data/all_domains_with_textual_attributes.csv')
-	elm_from_joblib = joblib.load('./models_overall/elm_spams_dgas_phishing_gandi_selled.pkl')
-	domain = input("Domain name : ")
+	df = pd.read_csv('../../code_data/data_all_lexical_features/all_domains_with_textual_attributes.csv')
+	elm_from_joblib = joblib.load('./models_overall/elm_spam_dga_phish_alexa_gandi_selled_gandi_non_value.pkl')
+	domain = sys.argv[1]
 	ws.load()
+	os.chdir("../../code_data/code_preprocessors")
+	google_trends, twitter_trends = trends_extract()
+	cpt_google = 0
+	cpt_twitter = 0
+	for trend in google_trends:
+		for topic in trend:
+			cpt_google = cpt_google+domain.count(topic)
+	for trend in twitter_trends:
+		for topic in trend:
+			cpt_twitter = cpt_twitter+domain.count(topic)
 	txt = tldextract.extract(domain).suffix
 	list_tld = txt.split(".")
 	tld = list_tld[len(list_tld)-1]
@@ -78,10 +92,11 @@ if __name__=='__main__':
 	try:
 		ratio = c_ctr/v_ctr
 	except ZeroDivisionError:
-		ratio = 500.0
+		ratio = 70.0
 	nb_legitimate_keywords = 0
 	for word in legitimate_keywords_list :
 		nb_legitimate_keywords += domain.count(word)
-	attributes = da.reshape(da.from_array([len(domain),tlds[tlds.shape[0]-1],shannon_entropy(domain),nb_suspect_keywords,count,len(list_chars)- list_chars.count(''), len(ws.segment(domain)),sum(c.isdigit() for c in domain),int(r),len(set(domain)), nb_legitimate_keywords, domain.count('-'), domain.find('-')/len(domain) ,freq_transition_d_c ,ratio]),(1,15))
+	attributes = da.reshape(da.from_array([len(domain),tlds[tlds.shape[0]-1],shannon_entropy(domain),nb_suspect_keywords,count,len(list_chars)- list_chars.count(''), len(ws.segment(domain)),sum(c.isdigit() for c in domain),int(r),len(set(domain)), nb_legitimate_keywords, domain.count('-'), domain.find('-')/len(domain) ,freq_transition_d_c ,ratio,  cpt_google, cpt_twitter]),(1,17))
 	prediction = elm_from_joblib.predict(attributes)
-	print(np.round(prediction))
+	with open("../../code_test/test_results/result_"+domain+".txt", "a") as file1:
+		file1.write(str(bool(np.round(prediction)))+'\n')

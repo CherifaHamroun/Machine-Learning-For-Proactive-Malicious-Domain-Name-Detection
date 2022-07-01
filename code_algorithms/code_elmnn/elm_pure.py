@@ -9,6 +9,7 @@ import joblib
 import sklearn 
 import matplotlib.pyplot as plt
 import os
+import shutil
 
 def plot_roc_curve(directory,filename,fper, tper):  
     plt.plot(fper, tper, color='orange', label='ROC')
@@ -102,8 +103,14 @@ class ELM(object):
 
         return self.H * self.beta
 if __name__=='__main__':
-	directories = ['preprocessed_instances_for_overall_test', 'preprocessed_instances_for_alikeness_test']
+	directories = ['preprocessed_instances_for_overall_test']
 	for directory in directories:
+		if os.path.exists("./performances_"+directory[27:-5]):
+			shutil.rmtree("./performances_"+directory[27:-5])
+		os.mkdir('./performances_'+directory[27:-5])
+		if os.path.exists("./models_"+directory[27:-5]):
+			shutil.rmtree("./models_"+directory[27:-5])
+		os.mkdir('./models_'+directory[27:-5])
 		for filename in os.listdir('../../code_data/'+directory):
 			f = os.path.join('../../code_data/'+directory, filename)
 			if os.path.isfile(f):
@@ -112,8 +119,8 @@ if __name__=='__main__':
 				dff = ddf.read_csv(f)
 				dff = dff.sample(frac=1)
 				df = dff.drop(['class'], axis=1)
-				X = df.iloc[:, 3:18].values
-				Y = dff.iloc[:, 18].values
+				X = df.iloc[:, 3:20].values
+				Y = dff.iloc[:, 20].values
 				print("--- Data loaded in  %s seconds ---" % (time.time() - start_time))
 				print('--- Chunksizes computing ...')
 				start_time = time.time()
@@ -127,7 +134,6 @@ if __name__=='__main__':
 				elm = ELM(X.shape[1], 1, 100)
 				print('--- Training ...')
 				start_time = time.time()
-			# Train data
 				elm.train(x_train.compute(),y_train.compute().reshape(-1,1))
 				print("--- Training done in  %s seconds ---" % (time.time() - start_time))
 				joblib.dump(elm, './models_'+directory[27:-5]+'/elm_'+filename[22:-4]+'.pkl')
