@@ -22,15 +22,16 @@ if __name__ == '__main__' :
 		shutil.rmtree("../instances_for_alikeness_test")
 	os.mkdir('../instances_for_alikeness_test')
 	#start_time = time.time()
-	with open('../data_all_lexical_features/valid_domains_lists_length.txt', "r") as fd:
-        	list_lens = fd.read().splitlines()
-	data_types['spams'] = {"length":int(list_lens[3]), "position":int(list_lens[1])+int(list_lens[2])}
-	data_types['phishing'] = {"length":int(list_lens[1]), "position":0}
-	data_types['dgas'] = {"length":int(list_lens[2]), "position":int(list_lens[1])}
-	data_types['alexa'] = {"length":1000000, "position":int(list_lens[1])+int(list_lens[2])+int(list_lens[3])+500000}
-	data_types['gandi_selled'] = {"length":500000, "position":int(list_lens[1])+int(list_lens[2])+int(list_lens[3])}
-	data_types['gandi_non_value'] = {"length":1000000, "position":int(list_lens[1])+int(list_lens[2])+int(list_lens[3])+500000+1000000}
+	#with open('../data_all_lexical_features/valid_domains_lists_length.txt', "r") as fd:
+        #	list_lens = fd.read().splitlines()
 	df = pd.read_csv('../data_all_lexical_features/all_domains_with_textual_attributes.csv')
+	data_types['spam'] = {"length":df['type'].value_counts()['spam'], "position": df.index[df['type'] == 'spam'].tolist()[0]}
+	data_types['phish'] = {"length":df['type'].value_counts()['phish'], "position":df.index[df['type'] == 'phish'].tolist()[0]}
+	data_types['dga'] = {"length":df['type'].value_counts()['dga'], "position":df.index[df['type'] == 'dga'].tolist()[0]}
+	data_types['alexa'] = {"length":df['type'].value_counts()['alexa'], "position":df.index[df['type'] == 'alexa'].tolist()[0]}
+	data_types['gandi_selled'] = {"length":df['type'].value_counts()['gandi_selled'], "position":df.index[df['type'] == 'gandi_selled'].tolist()[0]}
+	data_types['gandi_non_value'] = {"length":df['type'].value_counts()['gandi_non_value'], "position":df.index[df['type'] == 'gandi_non_value'].tolist()[0]}
+	#df = pd.read_csv('../data_all_lexical_features/all_domains_with_textual_attributes.csv')
 	#types_malicious = input("Hello " + getpass.getuser()+ " So you wanna generate a dataset contaning what kind of malicious domains[ spams, phishing, dgas ] ? ( Please type your options as in the list and separate them with a blank) : ").split()
 	#types_benign = input("What about benign domains [ alexa, gandi_selled, gandi_benign ] ? ( Please type your options as in the list and separate them with a blank) : ").split()
 	#maliciousness = input("Do you want to detect a type of maliciousness ? [ yes, no ]")

@@ -14,23 +14,25 @@ import multiprocessing as mp
 import os
 import shutil
 from trending_keywords_extractor import trends_extract
+import textdistance
 
 suspect_keywords_list = ['activity', 'appleid', 'poloniex', 'moneygram', 'overstock', '.bank', '.online', '.comalert', 'online',
- 'coinhive', '.business', '.party', '-com.', 'purchase', 'recover', 'iforgot', 'bithumb', 'reddit', '.cc', '.pw', '.netauthentication', 'safe',
- 'kraken', 'wellsfargo', '.center', '.racing', '.orgauthorize', 'secure', 'protonmail' ,'localbitcoin' , 'ukraine' , '.cf', '.ren' 'cgi-bin',
+ 'coinhive', '.business', '.party','.com' ,'-com.', 'purchase', 'recover', 'iforgot', 'bithumb', '.cc', '.pw', '.netauthentication', 'safe',
+ 'kraken', 'wellsfargo', '.center', '.racing', '.orgauthorize', 'secure', 'protonmail' ,'localbitcoin' , 'ukraine' , '.cf', '.ren', 'cgi-bin',
  'bill', 'security', 'tutanota', 'bitstamp', '.click' , '.review', '.comclient', 'service', 'bittrex', 'santander', '.club', '.science', '.net.',
  'support', 'transaction', 'blockchain', 'flickr', 'morganstanley', '.country', '.stream', '.org.', 'unlock', 'update', 'bitflyer', 'barclays',
  '.download', '.study', '.com.', 'wallet', 'account', 'outlook', 'coinbase', 'hsbc', '.ga', '.support', '.govform', 'login', 'hitbtc', 'scottrade',
  '.gb', '.tech', '.gov.', 'log-in', 'password', 'lakebtc', 'ameritrade', '.gdn', '.tk' , '.gouvlive', 'signin', 'bitfinex', 'merilledge', '.gq' ,
  '.top' , '-gouvmanage', 'sign-in', 'bitconnect', 'bank', '.info', '.vip', '.gouv.', 'verification', 'verify', 'coinsbank', '.kim' ,
  '.win', 'webscr', 'invoice', '.loan', '.work', 'authenticate', 'confirm', '.men', '.xin', 'credential', 'customer', '.ml', '.xyz', '.mom', 'phish',
- 'viagra','russia', 'billing', 'casino', 'spam']
+ 'viagra','russia', 'billing', 'casino', 'spam', 'fuck', 'hate', 'drug', 'violence', 'viagra', 'scam', 'dga', 'typo', 'suck', 'payment', 'out', 'in',
+ 'enter']
 
-legitimate_keywords_list = ['outlook', 'facebook', 'skype', 'icloud', 'office365', 'tumblr', 'westernunion', 'alibaba', 'github', 'microsoft', 'reddit',
- 'bankofamerica', 'aliexpress', 'itunes', 'windows', 'youtube', 'leboncoin', 'apple', 'twitter' 'paypal', 'amazon', 'netflix', 'linkedin', 'citigroup',
- 'hotmail', 'bittrex', 'instagram', 'gmail', 'google',  'whatsapp', 'yahoo' , 'yandex', 'baidu', 'bilibili', 'wikipedia', 'qq', 'zhihu', 'reddit', 'bing',
- 'taobao', 'csdn', 'live', 'weibo', 'sina', 'zoom', 'office', 'sohu', 'tmail', 'tiktok', 'canva', 'stackoverflow', 'naver', 'fandom', 'mail', 'myshopify',
- 'douban' ]
+legitimate_keywords_list = ['outlook', 'facebook', 'skype', 'icloud', 'office365', 'tumblr', 'westernunion', 'alibaba', 'github', 'microsoft',
+ 'reddit', 'bankofamerica', 'aliexpress', 'itunes', 'windows', 'youtube', 'leboncoin', 'apple', 'twitter', 'paypal', 'amazon', 'netflix', 'linkedin',
+ 'citigroup','hotmail', 'bittrex', 'instagram', 'gmail', 'google',  'whatsapp', 'yahoo' , 'yandex', 'baidu', 'bilibili', 'wikipedia', 'qq', 'zhihu',
+ 'bing', 'taobao', 'csdn', 'live', 'weibo', 'sina', 'zoom', 'office', 'sohu', 'tmail', 'tiktok', 'canva', 'stackoverflow', 'naver', 'fandom',
+ 'mail', 'myshopify','douban', 'android' ]
 
 vowels = ['a', 'e', 'i', 'o', 'u']
 
@@ -174,6 +176,8 @@ def lexicalDataGenerator(df) :
     list_nostril = []
     list_nb_hyphends = []
     list_positions = []
+    list_nb_dots = []
+    list_suspect_tlds = []
     r = False
     list_cardinality = []
     list_ratio_c_v = []
@@ -207,6 +211,7 @@ def lexicalDataGenerator(df) :
             nb_suspect_keywords += dom.count(word)
         for word in legitimate_keywords_list :
             nb_legitimate_keywords += dom.count(word)
+        domwords = ws.segment(dom)
         for x in domain:
             if (last_x.isdigit() and not x.isdigit()) or (not last_x.isdigit() and x.isdigit()):
                 freq_transition_d_c +=1
@@ -220,18 +225,21 @@ def lexicalDataGenerator(df) :
         except ZeroDivisionError:
             list_ratio_c_v.append(70.0)
         list_nb_suspect.append(nb_suspect_keywords)
-        list_nb_legitimate.append(nb_legitimate_keywords)
+        list_nb_legitimate.append(nb_suspect_keywords)
         cpt = 0
         for trend in google_trends:
+            #cpt = cpt + textdistance.jaccard(domwords , trend)
             for topic in trend:
                 cpt = cpt+dom.count(topic)
-        list_trending_in_google_rate.append(cpt)
+        list_trending_in_google_rate.append(cpt) #/len(google_trends))
         cpt = 0
+
         for trend in twitter_trends:
+            #cpt = cpt + textdistance.jaccard(domwords , trend)
             for topic in trend:
                 cpt = cpt+dom.count(topic)
         list_trending_in_twitter_rate.append(cpt)
-        list_nb_words.append(len(ws.segment(dom)))
+        list_nb_words.append(len(domwords))
         list_nb_digits.append(sum(c.isdigit() for c in domain))
         list_freq_transitions.append(freq_transition_d_c)
         try:
@@ -241,8 +249,11 @@ def lexicalDataGenerator(df) :
         list_nostril.append(r)
         list_cardinality.append(len(set(domain)))
         list_nb_hyphends.append(domain.count('-'))
+        list_nb_dots.append(domain.count('.'))
+        list_suspect_tlds.append(('.'+tld) in suspect_keywords_list)
     return{"len": list_lengths, 
             "tld": list_tlds, 
+            "suspect_tld": list_suspect_tlds,
             "entropy": list_entropies, 
             "suspect" : list_nb_suspect, 
             "legitimate" : list_nb_legitimate,
@@ -253,6 +264,7 @@ def lexicalDataGenerator(df) :
             "nonesense":list_nostril, 
             "cardinality":list_cardinality,
             "hyphends" : list_nb_hyphends,
+            "dots" : list_nb_dots,
             "position" : list_positions,
             "transitions" : list_freq_transitions,
             "ratio" : list_ratio_c_v,
@@ -263,11 +275,13 @@ def dataProcessing(LARGE_FILE, CHUNKSIZE, cores):
 	start_time = time.time()
 	reader = pd.read_csv(LARGE_FILE, chunksize=CHUNKSIZE)
 	pool = mp.Pool(cores)
-	result = {"len": [], "tld": [], "entropy": [], "suspect":[], "consec":[] , "strange" : [], "words" : [], "digits":[], "nonesense":[], "cardinality":[], "legitimate":[], "hyphends":[], "position":[], "transitions":[],"ratio":[], "trending_in_google":[], "trending_in_twitter":[]}
+	#result = {"len": [], "tld": [], "suspect":[], "consec":[], "words" : [], "digits":[], "nonesense":[], "dots":[], "suspect_tld":[], "legitimate":[], "transitions":[],"trending_in_google":[], "trending_in_twitter":[]}
+	result = {"len": [], "tld": [], "entropy": [], "suspect":[], "consec":[] , "strange" : [], "words" : [], "digits":[], "nonesense":[], "cardinality":[], "legitimate":[], "hyphends":[], "position":[], "transitions":[],"ratio":[], "trending_in_google":[], "trending_in_twitter":[], "dots":[], "suspect_tld":[]}
 	for df in reader:
 		f = pool.apply(lexicalDataGenerator,[df])
 		result['len'] += f['len']
 		result['tld'] += f['tld']
+		result['suspect_tld'] += f['suspect_tld']
 		result['entropy'] += f['entropy']
 		result['suspect'] += f['suspect']
 		result['consec'] += f['consec']
@@ -278,6 +292,7 @@ def dataProcessing(LARGE_FILE, CHUNKSIZE, cores):
 		result['cardinality'] += f['cardinality']
 		result['legitimate'] += f['legitimate']
 		result['hyphends'] += f['hyphends']
+		result['dots'] += f['dots']
 		result['position'] += f['position']
 		result['transitions'] += f['transitions']
 		result['ratio'] += f['ratio']
@@ -297,12 +312,7 @@ if __name__ == '__main__':
 	if os.path.exists("../data_all_lexical_features"):
 		shutil.rmtree("../data_all_lexical_features")
 	os.mkdir('../data_all_lexical_features')
-	with open('../data_all_lexical_features/valid_domains_lists_length.txt', 'w') as f:
-		print(len(domains),  file=f)
-		print(len(list_phish), file=f)
-		print(len(list_dgas), file=f)
-		print(len(list_spams), file=f)
-	classes = [1] * (len(list_phish) +len(list_dgas)+ len(list_spams)) + [0]*(len(list_alexa_white)+len(list_gandi_selled_white)+len(list_gandi_non_value_white))
+	classes = [1] *(len(list_phish)+len(list_dgas)+ len(list_spams))+ [0]*(len(list_gandi_selled_white)+len(list_alexa_white)+len(list_gandi_non_value_white))
 	types = ['phish']*len(list_phish)+['dga']*len(list_dgas)+['spam']*len(list_spams)+['gandi_selled']*len(list_gandi_selled_white)+['alexa']*len(list_alexa_white)+['gandi_non_value']*len(list_gandi_non_value_white)
 	df = pd.DataFrame(domains, columns = ['domain_name'])
 	df['class'] = classes
@@ -320,6 +330,7 @@ if __name__ == '__main__':
 	df = pd.DataFrame(domains, columns = ['domain_name'])
 	df['domain_len'] = result['len']
 	df['tld'] = result['tld']
+	df['suspect_tld'] = result['suspect_tld']
 	df['entropy'] = result['entropy']
 	df['nb_suspect_keywords'] = result['suspect']
 	df['nb_consec_chars'] = result['consec']
@@ -330,6 +341,7 @@ if __name__ == '__main__':
 	df['cardinality'] = result['cardinality']
 	df['nb_legitimate_keywords'] = result['legitimate']
 	df['nb_hyphends'] = result['hyphends']
+	df['nb_dots'] = result['dots']
 	df['last_hyphend_position'] = result['position']
 	df['transition_frequency'] = result['transitions']
 	df['consonent_vowel_ratio'] = result['ratio']
@@ -337,5 +349,11 @@ if __name__ == '__main__':
 	df['twitter_trend_rate'] = result['trending_in_twitter']
 	df['class'] = classes
 	df['type'] = types
+	df = df.drop_duplicates(subset=['domain_name'])
+	with open('../data_all_lexical_features/valid_domains_lists_length.txt', 'w') as f:
+		print(df.shape[0],  file=f)
+		print(df['type'].value_counts()['phish'], file=f)
+		print(df['type'].value_counts()['dga'], file=f)
+		print(df['type'].value_counts()['spam'], file=f)
 	df.to_csv('../data_all_lexical_features/all_domains_with_textual_attributes.csv')
 	print("--- Data stacked in  %s seconds ---" % (time.time() - start_time))

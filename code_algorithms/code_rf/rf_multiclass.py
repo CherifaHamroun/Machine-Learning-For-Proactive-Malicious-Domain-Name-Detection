@@ -29,10 +29,12 @@ def plot_roc_curve(fper, tper):
 def KFoldValidation(train_index, test_index):
 	X_train, X_test = X[train_index], X[test_index]
 	y_train, y_test = y[train_index], y[test_index]
-	model = RandomForestClassifier()
+	global previous_model
+	model = previous_model
 	model = RandomizedSearchCV(model, model_params, n_iter=10, cv=2, random_state=42)
 	model.fit(X_train, y_train)
 	model = model.best_estimator_
+	previous_model = model
 	y_pred = model.predict(X_test)
 	global accuracy
 	accuracy.append(skm.accuracy_score(y_test, y_pred))
@@ -45,8 +47,8 @@ def KFoldValidation(train_index, test_index):
 	#global roc_auc_score
 	#roc_auc_score.append(skm.roc_auc_score(y_test, y_pred, average='micro'))
 	global confusion
-	confusion = confusion + skm.multilabel_confusion_matrix(y_test, y_pred, labels = [0,1,2,3,4])
-	return { "model":model, "accuracy":accuracy, "f1_score":f1_score,"recall":recall, "precision":precision,"roc_auc_score":roc_auc_score,"confusion":confusion }
+	confusion = confusion + skm.multilabel_confusion_matrix(y_test, y_pred, labels = [0,1,2,3,4, 5])
+	return { "model":previous_model, "accuracy":accuracy, "f1_score":f1_score,"recall":recall, "precision":precision,"roc_auc_score":roc_auc_score,"confusion":confusion }
 	#return {"model":model.best_estimator_, "score":model.best_score_}
 
 if __name__ == "__main__": 
@@ -60,13 +62,13 @@ if __name__ == "__main__":
 		os.mkdir('./performances_'+directory[13:-5])
 		for filename in os.listdir('../../code_data/'+directory):
 			f = os.path.join('../../code_data/'+directory, filename)
-			if os.path.isfile(f) and filename=="preprocessed_instance_spams_dgas_phishing_alexa_gandi_selled_gandi_non_value.csv":
+			if os.path.isfile(f) and filename=="preprocessed_instance_spam_dga_phish_alexa_gandi_selled_gandi_non_value.csv":
 				print('--- Loading '+filename+' data ...')
 				start_time = time.time()
 				df = ddf.read_csv(f)
 				df = df.sample(frac=1)
-				X = df.iloc[:, 3:20].values
-				y = df.iloc[:, 20].values
+				X = df.iloc[:, 3:22].values
+				y = df.iloc[:, 22].values
 				print("--- Data loaded in  %s seconds ---" % (time.time() - start_time))
 				print('--- Chunksizes computing ...')
 				start_time = time.time()
@@ -77,12 +79,9 @@ if __name__ == "__main__":
 				print('--- Training ---')
 				start_time = time.time()
 				model_params = {
-				# randomly sample numbers from 4 to 204 estimators
-				'n_estimators': randint(4,200),
-				# normally distributed max_features, with mean .25 stddev 0.1, bounded between 0 and 1
-				'max_features': truncnorm(a=0, b=1, loc=0.25, scale=0.1),
-				# uniform distribution from 0.01 to 0.2 (0.01 + 0.199)
-				'min_samples_split': uniform(0.01, 0.199)
+                                'n_estimators': randint(100,150),
+                                'criterion' : ['gini', 'entropy'],
+				'min_samples_split': uniform(0.01, 0.199),
 				}
 				accuracy = []
 				f1_score = []
@@ -90,6 +89,7 @@ if __name__ == "__main__":
 				recall = []
 				roc_auc_score = []
 				confusion = [[0,0],[0,0]]
+				previous_model = RandomForestClassifier(warm_start=True,n_jobs=-1,max_depth = None, verbose=1)
 				res = Parallel(n_jobs=os.cpu_count(), require='sharedmem')(delayed(KFoldValidation)(i,j) for i,j in kf.split(X))[0]
 				#rf_model = RandomForestClassifier()
 				#model = RandomizedSearchCV(rf_model, model_params,n_jobs = os.cpu_count(),  n_iter=100, cv=5, random_state=1)

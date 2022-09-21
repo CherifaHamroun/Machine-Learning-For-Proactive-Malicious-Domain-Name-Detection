@@ -1,4 +1,4 @@
 #!/bin/bash
 pushd ./code_implementation/code_algorithms/algorithm_elmnn
-python3 elm_pure.py
+python3 elmnn.py
 popd

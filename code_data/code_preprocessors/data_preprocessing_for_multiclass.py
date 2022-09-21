@@ -14,12 +14,18 @@ if __name__ == '__main__' :
 		os.mkdir('../preprocessed_multiclass_'+directory)
 		for filename in os.listdir('../'+directory):
 			f = os.path.join('../'+directory, filename)
-			if os.path.isfile(f):
+			if os.path.isfile(f) and filename == 'instance_spam_dga_phish_alexa_gandi_selled_gandi_non_value.csv':
 				start_time = time.time()
 				df = pd.read_csv(f)
 				df['nonesense'] = df['nonesense'].astype(int)
+				df['suspect_tld'] = df['suspect_tld'].astype(int)
 				df = df.drop(['domain_name'], axis=1)
 				df = df.drop(['class'], axis=1)
+				df = df.drop(['Unnamed: 0.4'], axis=1)
+				df = df.drop(['Unnamed: 0.3'], axis=1)
+				df = df.drop(['Unnamed: 0.2'], axis=1)
+				df = df.drop(['Unnamed: 0.1'], axis=1)
+				df = df.drop(['Unnamed: 0'], axis=1)
 				#df_processed = pd.get_dummies(df, prefix_sep="_",columns=['tld'])
 				#label_encoders = {}
 				new_le = LabelEncoder()

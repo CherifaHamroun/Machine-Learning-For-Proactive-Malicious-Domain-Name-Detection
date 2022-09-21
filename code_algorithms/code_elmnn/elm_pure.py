@@ -119,8 +119,8 @@ if __name__=='__main__':
 				dff = ddf.read_csv(f)
 				dff = dff.sample(frac=1)
 				df = dff.drop(['class'], axis=1)
-				X = df.iloc[:, 3:20].values
-				Y = dff.iloc[:, 20].values
+				X = df.iloc[:, 3:22].values
+				Y = dff.iloc[:, 22].values
 				print("--- Data loaded in  %s seconds ---" % (time.time() - start_time))
 				print('--- Chunksizes computing ...')
 				start_time = time.time()
@@ -144,7 +144,7 @@ if __name__=='__main__':
 					file1.write('--- F1 score : '+str(skm.f1_score(y_test, y_pred, average='macro'))+'\n')
 					file1.write('--- Precision : '+str(skm.precision_score(y_test, y_pred, average='macro'))+'\n')
 					file1.write('--- Recall : '+str(skm.recall_score(y_test, y_pred, average='macro'))+'\n')
-					file1.write('--- ROC AUC score : '+str(skm.roc_auc_score(y_test, y_pred))+'\n')
+					#file1.write('--- ROC AUC score : '+str(skm.roc_auc_score(y_test, y_pred))+'\n')
 					fper, tper, thresholds = skm.roc_curve(y_test, y_pred) 
 					plot_roc_curve(directory[27:-5],filename[22:-4],fper, tper)
 					file1.write('--- Confusion Matrix : '+str(skm.confusion_matrix(y_test, y_pred, labels=[0,1]))+'\n')

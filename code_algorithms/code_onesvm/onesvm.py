@@ -17,9 +17,11 @@ from statistics import mean
 def KFoldValidation(train_index, test_index):
         X_train, X_test = X[train_index], X[test_index]
         y_train, y_test = y[train_index], y[test_index]
-        #model = OneClassSVM(gamma='scale', nu=0.01)
-        #model = RandomizedSearchCV(model, model_params, n_iter=10, cv=2, random_state=42, scoring ="accuracy" )
+        global model_previous
+        model = model_previous
+        #model = RandomizedSearchCV(model, model_params, n_iter=2, cv=2, random_state=42, scoring ="accuracy" )
        	model.fit(X_train, y_train)
+        model_previous = model
         #return {"model":model.best_estimator_, "score":model.best_score_}
         y_pred = model.predict(X_test)
         global accuracy
@@ -35,7 +37,7 @@ def KFoldValidation(train_index, test_index):
         #global confusion
         #confusion = confusion + skm.confusion_matrix(y_test, y_pred, labels = [0,1])
         #return { "model":model, "accuracy":accuracy, "f1_score":f1_score,"recall":recall, "precision":precision,"roc_auc_score":roc_auc_score,"confusion":confusion }
-        return { "model":model, "accuracy":accuracy}
+        return { "model":model_previous, "accuracy":accuracy}
 if __name__ == "__main__":
 	directories = ['preprocessed_instances_for_alikeness_test']
 	for directory in directories:
@@ -52,8 +54,8 @@ if __name__ == "__main__":
 				start_time = time.time()
 				df = ddf.read_csv(f)
 				df = df.sample(frac=1)
-				X = df.iloc[:, 3:20].values
-				y = df.iloc[:, 20].values
+				X = df.iloc[:, 3:22].values
+				y = df.iloc[:, 22].values
 				print("--- Data loaded in  %s seconds ---" % (time.time() - start_time))
 				print('--- Chunksizes computing ...')
 				start_time = time.time()
@@ -63,18 +65,18 @@ if __name__ == "__main__":
 				kf = KFold(n_splits=2, random_state = 42, shuffle=True)
 				print('--- Training ---')
 				model_params = {
-                                'degree': randint(1,3),
-                                'max_iter': randint(90,100)
+				#'kernel' : ['linear', 'poly', 'rbf', 'sigmoid'],
+				#'nu' : uniform(0.05, 0.99),
                                 }
 				accuracy = []
-				f1_score = []
-				precision = []
-				recall = []
-				roc_auc_score = []
-				confusion = [[0,0],[0,0]]
 				start_time = time.time()
-				model = OneClassSVM(gamma='scale', nu=0.01)
-				#model = OneClassSVM()
+				#if filename == "preprocessed_instance_gandi_selled_alike.csv":
+				#	model_previous = OneClassSVM(kernel = 'rbf', gamma='auto',nu=0.1, verbose = True, max_iter = 2)
+				#elif filename == "preprocessed_instance_spam_alike.csv":
+				#	model_previous = OneClassSVM(kernel = 'rbf', gamma=0.001,nu=0.1, verbose = True, max_iter = 5)
+				#else :
+				model_previous = OneClassSVM(kernel = 'rbf', gamma='auto',nu=0.1, verbose = True, max_iter = 20)
+				#model_previous = OneClassSVM(max_iter = 3)
 				#model = RandomizedSearchCV(model, model_params,n_jobs = os.cpu_count(),  n_iter=1, cv=2, random_state=1, scoring="accuracy")
 				#model.fit(X)
 				res = Parallel(n_jobs=os.cpu_count(), require='sharedmem')(delayed(KFoldValidation)(i,j) for i,j in kf.split(X))[0]

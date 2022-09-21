@@ -29,10 +29,12 @@ def plot_roc_curve(fper, tper):
 def KFoldValidation(train_index, test_index):
 	X_train, X_test = X[train_index], X[test_index]
 	y_train, y_test = y[train_index], y[test_index]
-	model = RandomForestClassifier()
-	model = RandomizedSearchCV(model, model_params, n_iter=10, cv=2, random_state=42, scoring = "accuracy")
+	global model_previous
+	model = model_previous
+	model = RandomizedSearchCV(model, model_params, n_iter=2, cv=2, random_state=42, scoring = "accuracy")
 	model.fit(X_train, y_train)
 	model = model.best_estimator_
+	model_previous = model
 	y_pred = model.predict(X_test)
 	global accuracy
 	accuracy.append(skm.accuracy_score(y_test, y_pred))
@@ -42,11 +44,11 @@ def KFoldValidation(train_index, test_index):
 	recall.append(skm.recall_score(y_test, y_pred))
 	global precision
 	precision.append(skm.precision_score(y_test, y_pred))
-	global roc_auc_score
-	roc_auc_score.append(skm.roc_auc_score(y_test, y_pred))
+#	global roc_auc_score
+#	roc_auc_score.append(skm.roc_auc_score(y_test, y_pred))
 	global confusion
 	confusion = confusion + skm.confusion_matrix(y_test, y_pred, labels = [0,1])
-	return { "model":model, "accuracy":accuracy, "f1_score":f1_score,"recall":recall, "precision":precision,"roc_auc_score":roc_auc_score,"confusion":confusion }
+	return { "model":model_previous, "accuracy":accuracy, "f1_score":f1_score,"recall":recall, "precision":precision,"confusion":confusion }
 	#return {"model":model.best_estimator_, "score":model.best_score_}
 
 if __name__ == "__main__": 
@@ -65,8 +67,8 @@ if __name__ == "__main__":
 				start_time = time.time()
 				df = ddf.read_csv(f)
 				df = df.sample(frac=1)
-				X = df.iloc[:, 3:20].values
-				y = df.iloc[:, 20].values
+				X = df.iloc[:, 3:22].values
+				y = df.iloc[:, 22].values
 				print("--- Data loaded in  %s seconds ---" % (time.time() - start_time))
 				print('--- Chunksizes computing ...')
 				start_time = time.time()
@@ -78,18 +80,23 @@ if __name__ == "__main__":
 				start_time = time.time()
 				model_params = {
 				# randomly sample numbers from 4 to 204 estimators
-				'n_estimators': randint(4,200),
+				#'n_estimators': randint(100,110),
+				'criterion' : ['gini', 'entropy'],
+				#'max_depth':5,
 				# normally distributed max_features, with mean .25 stddev 0.1, bounded between 0 and 1
-				'max_features': truncnorm(a=0, b=1, loc=0.25, scale=0.1),
+				'max_features': truncnorm(a=0, b=0.6, loc=0.25, scale=0.1),
 				# uniform distribution from 0.01 to 0.2 (0.01 + 0.199)
-				'min_samples_split': uniform(0.01, 0.199)
+				'min_samples_split': uniform(0.01, 0.199),
+				#'n_jobs': -1,
+				#'warm_start':True
 				}
 				accuracy = []
 				f1_score = []
 				precision = []
 				recall = []
-				roc_auc_score = []
+#				roc_auc_score = []
 				confusion = [[0,0],[0,0]]
+				model_previous = RandomForestClassifier(warm_start=True,n_jobs=-1,n_estimators = 200,max_depth = None)
 				res = Parallel(n_jobs=os.cpu_count(), require='sharedmem')(delayed(KFoldValidation)(i,j) for i,j in kf.split(X))[0]
 				#rf_model = RandomForestClassifier()
 				#model = RandomizedSearchCV(rf_model, model_params,n_jobs = os.cpu_count(),  n_iter=100, cv=5, random_state=1)
@@ -103,5 +110,5 @@ if __name__ == "__main__":
 					file1.write('--- F1 score : '+str(mean(f1_score))+'\n')
 					file1.write('--- Precision : '+str(mean(precision))+'\n')
 					file1.write('--- Recall : '+str(mean(recall))+'\n')
-					file1.write('--- ROC AUC score : '+str(mean(roc_auc_score))+'\n')
+#					file1.write('--- ROC AUC score : '+str(mean(roc_auc_score))+'\n')
 					file1.write('--- Confusion Matrix : '+str(confusion)+'\n')
