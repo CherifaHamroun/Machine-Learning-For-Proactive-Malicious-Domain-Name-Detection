@@ -1,10 +1,21 @@
-# Malicious domain name detection
+# Machine learning for proactive malicious domain name detection
 
-### Packages needed for data generation
+### Install requirements.txt 
+```
+pip3 install -r requirements.txt
+```
+
+### Nostril installation 
 nostril :
 ```
 git clone https://github.com/casics/nostril.git
 cd nostril
 sudo python3 -m pip install .
 ```
-##### Do not forget to set up the crontab 
+
+### Crontab configuration 
+phish_getter.sh (at t0)
+spams_getter.sh (at t0)
+trends_getter.sh (at t0)
+reprocessor.sh (at t1 = t0+10min)
+retrainer.sh (at t1+2h)
